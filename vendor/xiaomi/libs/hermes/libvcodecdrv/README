@@ -1,0 +1,18 @@
+Library of MTK video codec drivers.
+
+This library is pre-built by MediaTek internal.
+
+
+WHAT IT DOES?
+=============
+libvcodecdrv.so can en/decode video in many video codecs by MTK solution.
+
+HOW IT WAS BUILT?
+==================
+It needs many libraries from AOSP and MTK.
+e.g. libcutils, liblog, libdl...
+
+HOW TO USE IT?
+==============
+We would not like to reveal how to use it.
+

@@ -1,0 +1,36 @@
+Library of MTK video codec driver using utility functions
+
+This library is pre-built by MediaTek internal.
+
+
+WHAT IT DOES?
+=============
+libvcodec_utility.so is provided MTK video codec driver using utility functions
+
+HOW IT WAS BUILT?
+==================
+It needs the following library from AOSP:
+1.  libcutils.so
+2.  libdl.so
+3.  libdvm.so
+
+
+and the following libs from MediaTek:
+1.  libbwc.so
+2.  libm4u.so
+3.  libion.so
+4.  libion_mtk.so
+5.  libsched.so
+6.  libgralloc_extra.so
+
+
+All source/dependency modules of this module are already put in
+'vendor/mediatek/libs' folder.
+
+HOW TO USE IT?
+==============
+
+libvcodec_utility.so is provided MTK video codec driver using utility functions
+all api interface are at (device/mediatek/common/kernel-headers)
+
+All the source code of this library were written by MediaTek co..

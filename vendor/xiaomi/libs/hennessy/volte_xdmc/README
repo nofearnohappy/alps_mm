@@ -1,0 +1,15 @@
+Static library , help IMS VoLTE module to parse xml message 
+
+WHAT IT DOES?
+=============
+static library, provide VoLTE Stack with xml-related API
+
+HOW IT WAS BUILT?
+==================
+control by MTK_IMS_SUPPORT feature option
+
+HOW TO USE IT?
+==============
+If any process wants to use this library, please add library path and include path in its Makefile 
+
+All the source code of this library were written by MediaTek co..
