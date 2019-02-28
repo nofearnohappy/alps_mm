@@ -1640,6 +1640,21 @@ ImgSensorDrv::sendCommand(
             case SENSOR_SCENARIO_ID_SLIM_VIDEO2:
                 FeaturePara[0] = MSDK_SCENARIO_ID_SLIM_VIDEO;
                 break;
+            case SENSOR_SCENARIO_ID_CUSTOM1:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM1;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM2:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM2;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM3:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM3;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM4:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM4;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM5:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM5;
+                break;
 
             default:
                 LOG_ERR("[setScenario] error scenario id\n");
@@ -1693,6 +1708,21 @@ ImgSensorDrv::sendCommand(
                 break;
             case SENSOR_SCENARIO_ID_SLIM_VIDEO2:
                 FeaturePara[0] = MSDK_SCENARIO_ID_SLIM_VIDEO;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM1:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM1;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM2:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM2;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM3:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM3;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM4:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM4;
+                break;
+            case SENSOR_SCENARIO_ID_CUSTOM5:
+                FeaturePara[0] = MSDK_SCENARIO_ID_CUSTOM5;
                 break;
             default:
                 LOG_ERR("[setScenario] error scenario id\n");
@@ -1979,6 +2009,11 @@ ImgSensorDrv::sendCommand(
 #ifdef SENDCMD_LOG
         LOG_MSG("[CMD_SENSOR_SET_IHDR_SHUTTER_GAIN] FeaturePara[0] = %llu, FeaturePara[1] = %llu, FeaturePara[2] = %llu, FeaturePara[3] = %llu \n", FeaturePara[0], FeaturePara[1], FeaturePara[2], FeaturePara[3]);
 #endif
+        break;
+    case CMD_SENSOR_SET_SENSOR_ISO:
+        FeatureId = SENSOR_FEATURE_SET_ISO;
+        pFeaturePara = (UINT8*)parg1;
+        FeatureParaLen = sizeof(SET_SENSOR_ISO);
         break;
     default:
         LOG_ERR("[sendCommand]Command ID = %d is undefined\n",cmd);

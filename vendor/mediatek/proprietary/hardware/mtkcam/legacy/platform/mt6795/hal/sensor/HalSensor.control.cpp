@@ -50,7 +50,12 @@
 #include <cutils/properties.h>
 
 
+/* Vanzo:zhangqingzhan on: Wed, 18 Nov 2015 20:18:59 +0800
+ * TODO:for pip db
 #define TWO_PIXEL_MODE_THRESHOLD (3216000)//13.4Mpxe * 24fps, 4224 x 3168 (4:3), (4224 * 3168 * 24 * 10) /1000
+ */
+#define TWO_PIXEL_MODE_THRESHOLD (3300000)//13.4Mpxe * 24fps, 4224 x 3168 (4:3), (4224 * 3168 * 24 * 10) /1000
+// End of Vanzo: zhangqingzhan
 //
 extern SENSORDRV_INFO_STRUCT sensorDrvInfo[3];
 extern SENSOR_HAL_RAW_INFO_STRUCT sensorRawInfo[3];
@@ -63,7 +68,7 @@ SENSOR_CONFIG_STRUCT sensorPara[3];
 SensorDynamicInfo sensorDynamicInfo[3];
 SENSOR_HAL_TEST_MODEL_STRUCT sensorTMPara;
 SENSOR_VC_INFO_STRUCT gVCInfo;
-
+static MUINT32 gPDAFMode;
 //hwsync
 #include "hwsync_drv.h"
 extern HWSyncDrv* mpHwSyncDrv;
@@ -212,6 +217,15 @@ MBOOL HalSensor::configure(
             halSensorIFParam[idx].HDRMode = hdrModeTest;
         }
     }
+    //PDAFTest Mode use property parameter
+    {
+        property_get("debug.senif.pdafmode", value, "0");
+        int PDAFModeTest=atoi(value);
+        if(PDAFModeTest == 1)
+        {
+            gPDAFMode = 1;
+        }
+    }
 
     MY_LOGD("SenDev=%d, scenario=%d, HDR=%d, fps=%d, twopix=%d\n",currSensorDev, halSensorIFParam[idx].scenarioId,
         halSensorIFParam[idx].HDRMode,halSensorIFParam[idx].framerate,halSensorIFParam[idx].twopixelOn);
@@ -248,11 +262,39 @@ MBOOL HalSensor::configure(
             currFPS = halSensorIFParam[idx].framerate;
             MY_LOGD("Reset FPS. configure Scenario=%d, FPS=%d\n",data1,data2);
         }
+        /*HDR get information*/
         if(halSensorIFParam[idx].HDRMode == 2)
+        {
+            data1 = halSensorIFParam[0].scenarioId;
+            VcInfo.ModeSelect = 2;
+            ret = pSensorDrv->sendCommand(SENSOR_MAIN, CMD_SENSOR_GET_SENSOR_VC_INFO, (MUINTPTR)&VcInfo, (MUINTPTR)&data1);
+            memcpy((void *)&gVCInfo, (void *)&VcInfo, sizeof(SENSOR_VC_INFO_STRUCT));
+        }
+        /*PDAF Virtual channel*/
+        if(sensorDrvInfo[0].PDAF_Support == 2) 
+        {
+            MUINT32 isPDAFsupport = 0;
+            data1 = halSensorIFParam[0].scenarioId;
+            pSensorDrv->sendCommand(SENSOR_MAIN, CMD_SENSOR_GET_SENSOR_PDAF_CAPACITY, (MUINTPTR)&data1, (MUINTPTR)&isPDAFsupport);
+          
+            MY_LOGD("PDAF=%d,isPDAFsupport=%d\n",sensorDrvInfo[0].PDAF_Support,isPDAFsupport);
+            if(isPDAFsupport)
+                gPDAFMode = 1;
+        }
+        if(gPDAFMode == 1)
         {
             data1 = halSensorIFParam[0].scenarioId;
             ret = pSensorDrv->sendCommand(SENSOR_MAIN, CMD_SENSOR_GET_SENSOR_VC_INFO, (MUINTPTR)&VcInfo, (MUINTPTR)&data1);
             memcpy((void *)&gVCInfo, (void *)&VcInfo, sizeof(SENSOR_VC_INFO_STRUCT));
+        }
+        /*HDR + PDAF Mixed mode*/
+        if((halSensorIFParam[idx].HDRMode == 2) && (gPDAFMode == 1))
+        {
+            data1 = halSensorIFParam[0].scenarioId;
+            VcInfo.ModeSelect = 2;
+            ret = pSensorDrv->sendCommand(SENSOR_MAIN, CMD_SENSOR_GET_SENSOR_VC_INFO, (MUINTPTR)&VcInfo, (MUINTPTR)&data1);
+            memcpy((void *)&gVCInfo, (void *)&VcInfo, sizeof(SENSOR_VC_INFO_STRUCT));
+            MY_LOGD("PDAF and HDR mix mode\n");
         }
         switch(halSensorIFParam[0].scenarioId) {
             case SENSOR_SCENARIO_ID_NORMAL_PREVIEW:
@@ -291,6 +333,7 @@ MBOOL HalSensor::configure(
         sensorPara[0].twopixelOn = halSensorIFParam[idx].twopixelOn;
         sensorPara[0].debugMode = halSensorIFParam[idx].debugMode;
         sensorPara[0].HDRMode = halSensorIFParam[idx].HDRMode;
+        sensorPara[0].PDAFMode = gPDAFMode;
      }
 
 
@@ -307,7 +350,12 @@ MBOOL HalSensor::configure(
             currFPS = halSensorIFParam[idx].framerate;
             MY_LOGD("configure Scenario=%d, FPS=%d\n",data1,data2);
         }
-
+        if(halSensorIFParam[idx].HDRMode == 2)
+        {
+            data1 = halSensorIFParam[1].scenarioId;
+            ret = pSensorDrv->sendCommand(SENSOR_SUB, CMD_SENSOR_GET_SENSOR_VC_INFO, (MUINTPTR)&VcInfo, (MUINTPTR)&data1);
+            memcpy((void *)&gVCInfo, (void *)&VcInfo, sizeof(SENSOR_VC_INFO_STRUCT));
+        }
         switch(halSensorIFParam[1].scenarioId) {
             case SENSOR_SCENARIO_ID_NORMAL_PREVIEW:
                 sensorPara[1].u1MIPIDataSettleDelay=sensorDrvInfo[0].MIPIDataLowPwr2HSSettleDelayM0;
@@ -344,6 +392,7 @@ MBOOL HalSensor::configure(
         sensorPara[1].twopixelOn = halSensorIFParam[idx].twopixelOn;
         sensorPara[1].debugMode = halSensorIFParam[idx].debugMode;
         sensorPara[1].HDRMode = halSensorIFParam[idx].HDRMode;
+        sensorPara[1].PDAFMode = gPDAFMode;
     }
 
     if(currSensorDev & SENSOR_DEV_MAIN_2 ) {
@@ -395,6 +444,7 @@ MBOOL HalSensor::configure(
         sensorPara[2].twopixelOn = halSensorIFParam[idx].twopixelOn;
         sensorPara[2].debugMode = halSensorIFParam[idx].debugMode;
         sensorPara[2].HDRMode = halSensorIFParam[idx].HDRMode;
+        sensorPara[2].PDAFMode = gPDAFMode;
     }
 
 
@@ -477,7 +527,7 @@ MBOOL HalSensor::configure(
         if (sensorRawInfo[0].sensorType == IMAGE_SENSOR_TYPE_RAW) {
             // RAW
             //ef test, use test model, tg in/imgo out
-            if((efTestEnable == 1) || (efTestEnable == 2)  || (efTestEnable == 3))
+            if((efTestEnable == 1) || (efTestEnable == 2)  || (efTestEnable == 3)) 
             {
                 MY_LOGD("in EFtest, pixel/line (%d/%d)\n",sensorTMPara.TM_Pixel,sensorTMPara.TM_Line);
                 sensorPara[0].u4PixelX0 = 40;//pixelX0 + ((srcWidth - halSensorIFParam[0].crop.w)>>1);
@@ -604,17 +654,25 @@ MBOOL HalSensor::configure(
         {
             sensorPara[0].inSrcTypeSel  = TEST_MODEL;
         }
-        //VR
+        /* VR for HDR using VC1*/
         if(sensorPara[0].HDRMode == 2)
         {
             sensorPara[0].inSrcTypeSel  = VIRTUAL_CHANNEL_1;
         }
 
+        /* PDAF using VC2 */
+        if(sensorPara[0].PDAFMode == 1)
+        {
+            sensorPara[0].inSrcTypeSel  = VIRTUAL_CHANNEL_2;
+        }
+        /*Mix mode : PDAF + HDR*/
+        if((sensorPara[0].HDRMode == 2) && (sensorPara[0].PDAFMode == 1))
+        {
+            sensorPara[0].inSrcTypeSel  = VIRTUAL_VC_12;
+        }
+        
         sensorPara[0].u1HsyncPol = sensorDrvInfo[0].SensorHsyncPolarity;
         sensorPara[0].u1VsyncPol = sensorDrvInfo[0].SensorVsyncPolarity;
-
-
-
 
     }
 
@@ -817,6 +875,10 @@ MBOOL HalSensor::configure(
         if(sensorPara[1].debugMode == 1)
         {
             sensorPara[1].inSrcTypeSel  = TEST_MODEL;
+        }
+        if(sensorPara[1].HDRMode == 2)
+        {
+            sensorPara[1].inSrcTypeSel  = VIRTUAL_CHANNEL_1;
         }
         sensorPara[1].u1HsyncPol = sensorDrvInfo[1].SensorHsyncPolarity;
         sensorPara[1].u1VsyncPol = sensorDrvInfo[1].SensorVsyncPolarity;
@@ -1048,6 +1110,7 @@ MBOOL HalSensor::configure(
         scenarioconf.sensorDevId = eSensorDev;
         scenarioconf.InitFPS = halSensorIFParam[0].framerate;
         scenarioconf.HDRMode = halSensorIFParam[0].HDRMode;
+        scenarioconf.PDAFMode = gPDAFMode;
         ret = pSensorDrv->setScenario(scenarioconf);
         if (ret < 0) {
             MY_LOGE("camera(%d) halSensorSetScenario fail ",eSensorDev);
@@ -1081,6 +1144,7 @@ MBOOL HalSensor::configure(
         scenarioconf.sensorDevId = eSensorDev;
         scenarioconf.InitFPS = halSensorIFParam[1].framerate;
         scenarioconf.HDRMode = halSensorIFParam[1].HDRMode;
+        scenarioconf.PDAFMode = gPDAFMode;
         ret = pSensorDrv->setScenario(scenarioconf);
         if (ret < 0) {
             MY_LOGE("camera(%d) halSensorSetScenario fail ",eSensorDev);
@@ -1113,6 +1177,7 @@ MBOOL HalSensor::configure(
         scenarioconf.sensorDevId = eSensorDev;
         scenarioconf.InitFPS = halSensorIFParam[2].framerate;
         scenarioconf.HDRMode = halSensorIFParam[2].HDRMode;
+        scenarioconf.PDAFMode = gPDAFMode;
         ret = pSensorDrv->setScenario(scenarioconf);
         if (ret < 0) {
             MY_LOGE("camera(%d) halSensorSetScenario fail",eSensorDev);
@@ -1498,6 +1563,16 @@ MINT HalSensor::sendCommand(
         cmdId = CMD_SENSOR_SET_SENSOR_AWB_GAIN;
         pSensorDrv->sendCommand((SENSOR_DEV_ENUM)sensorDevId,cmdId, arg1);
         break;
+    /*RGBW Sensor CMD*/
+    case SENSOR_CMD_SET_SENSOR_AWB_GAIN:
+        cmdId = CMD_SENSOR_SET_SENSOR_AWB_GAIN;
+        pSensorDrv->sendCommand((SENSOR_DEV_ENUM)sensorDevId,cmdId, arg1);
+        break;
+    case SENSOR_CMD_SET_SENSOR_ISO:
+        cmdId = CMD_SENSOR_SET_SENSOR_ISO;
+        pSensorDrv->sendCommand((SENSOR_DEV_ENUM)sensorDevId,cmdId, arg1, arg2, arg3);
+        break;
+    /*End of RGBW CMD*/
     //0x2000
     case SENSOR_CMD_GET_UNSTABLE_DELAY_FRAME_CNT:
         cmdId = CMD_SENSOR_GET_UNSTABLE_DELAY_FRAME_CNT;
@@ -2017,39 +2092,115 @@ MINT HalSensor::seninfControl(MUINT8 enable, MUINT32 currSensorDev)
 
                 if (sensorPara[0].inSrcTypeSel >= VIRTUAL_CHANNEL_1) {
                     if(sensorPara[0].mipiPad == 0) {
+                        if (sensorPara[0].inSrcTypeSel == VIRTUAL_CHANNEL_1) {
 
-                        //sensor interface control (0x8100)
-                        ret = pSeninfDrv->setSeninf1Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, MIPI_SENSOR);
-                        //sensor muxer (0x8120)
-                        ret = pSeninfDrv->setSeninf1MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
-                                                            MIPI_SENSOR, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
+                            //sensor interface control (0x8100)
+                            ret = pSeninfDrv->setSeninf1Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, MIPI_SENSOR);
+                            //sensor muxer (0x8120)
+                            ret = pSeninfDrv->setSeninf1MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
+                                                                MIPI_SENSOR, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
 
-                        //virtual channel using CAM_SV(0x8900)
-                        ret = pSeninfDrv->setSeninf3Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, VIRTUAL_CHANNEL_1);
-                        ret = pSeninfDrv->setSeninf3MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
-                                                            VIRTUAL_CHANNEL_1, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
-                        //Cam SV Tg Grab
-                        ret = pSeninfDrv->setSV1GrabRange(0x00, (gVCInfo.VC1_SIZEH *10)>>3, 0x00, 0x01);
-                        ret = pSeninfDrv->setSV1Cfg((TG_FORMAT_ENUM)sensorPara[0].inDataType, (SENSOR_DATA_BITS_ENUM)sensorPara[0].senInLsb, sensorDynamicInfo[0].pixelMode);
-                        ret = pSeninfDrv->setSV1ViewFinderMode(sensorPara[0].u1IsContinuous? 0 : 1 );
+                            //virtual channel using CAM_SV(0x8900)
+                            ret = pSeninfDrv->setSeninf3Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, VIRTUAL_CHANNEL_1);
+                            ret = pSeninfDrv->setSeninf3MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
+                                                                VIRTUAL_CHANNEL_1, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
+                            //Cam SV Tg Grab
+                            ret = pSeninfDrv->setSV1GrabRange(0x00, gVCInfo.VC1_SIZEH, 0x00, gVCInfo.VC1_SIZEV);
+                            ret = pSeninfDrv->setSV1Cfg((TG_FORMAT_ENUM)sensorPara[0].inDataType, (SENSOR_DATA_BITS_ENUM)sensorPara[0].senInLsb, sensorDynamicInfo[0].pixelMode);
+                            ret = pSeninfDrv->setSV1ViewFinderMode(sensorPara[0].u1IsContinuous? 0 : 1 );
 
-                        // Sensor interface for VC
-                        MY_LOGD("VC0_ID(%d),VC0_DataType(%d),VC1_ID(%d),VC1_DataType(%d),VC2_ID(%d),VC2_DataType(%d),VC3_ID(%d),VC3_DataType(%d)",
-                                 gVCInfo.VC0_ID,gVCInfo.VC0_DataType,gVCInfo.VC1_ID,gVCInfo.VC1_DataType,gVCInfo.VC2_ID,gVCInfo.VC2_DataType,
-                                 gVCInfo.VC3_ID,gVCInfo.VC3_DataType);
-                        ret = pSeninfDrv->setSeninf1VC((gVCInfo.VC0_DataType<<2)|(gVCInfo.VC0_ID&0x03),(gVCInfo.VC1_DataType<<2)|(gVCInfo.VC1_ID&0x03),
-                                                        (gVCInfo.VC2_DataType<<2)|(gVCInfo.VC2_ID&0x03),(gVCInfo.VC3_DataType<<2)|(gVCInfo.VC3_ID&0x03),gVCInfo.VC_Num);
-                        //NCSI2 control reg
-                        ret = pSeninfDrv->setSeninf1NCSI2(sensorPara[0].u1MIPIDataTermDelay,sensorPara[0].u1MIPIDataSettleDelay,sensorPara[0].u1MIPIClkTermDelay,
-                        sensorPara[0].u1VsyncPol,sensorPara[0].u1MIPILaneNum,1,sensorPara[0].u1MIPIPacketECCOrder,0,0);
+                            // Sensor interface for VC
+                            MY_LOGD("VC0_ID(%d),VC0_DataType(%d),VC1_ID(%d),VC1_DataType(%d),VC2_ID(%d),VC2_DataType(%d),VC3_ID(%d),VC3_DataType(%d)",
+                                     gVCInfo.VC0_ID,gVCInfo.VC0_DataType,gVCInfo.VC1_ID,gVCInfo.VC1_DataType,gVCInfo.VC2_ID,gVCInfo.VC2_DataType,
+                                     gVCInfo.VC3_ID,gVCInfo.VC3_DataType);
+                            ret = pSeninfDrv->setSeninf1VC((gVCInfo.VC0_DataType<<2)|(gVCInfo.VC0_ID&0x03),(gVCInfo.VC1_DataType<<2)|(gVCInfo.VC1_ID&0x03),
+                                                            (gVCInfo.VC2_DataType<<2)|(gVCInfo.VC2_ID&0x03),(gVCInfo.VC3_DataType<<2)|(gVCInfo.VC3_ID&0x03),gVCInfo.VC_Num);
+                            //NCSI2 control reg
+                            ret = pSeninfDrv->setSeninf1NCSI2(sensorPara[0].u1MIPIDataTermDelay,sensorPara[0].u1MIPIDataSettleDelay,sensorPara[0].u1MIPIClkTermDelay,
+                            sensorPara[0].u1VsyncPol,sensorPara[0].u1MIPILaneNum,1,sensorPara[0].u1MIPIPacketECCOrder,0,0);
 
-                        ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_TG1,SENINF_1);
-                        ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_SV1,SENINF_1);
-                        sensorDynamicInfo[0].TgVR1Info = CAM_SV_1;
-                        sensorDynamicInfo[0].TgVR2Info = CAM_TG_NONE;
-                    }
-                    else {
-                        MY_LOGE("Main camera mipi pad(%d) incorrect, please check cfg_setting_imgsensor.cpp",sensorPara[0].mipiPad);
+                            ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_TG1,SENINF_1);
+                            ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_SV1,SENINF_1);
+                            sensorDynamicInfo[0].TgVR1Info = CAM_SV_1;
+                            sensorDynamicInfo[0].TgVR2Info = CAM_TG_NONE;
+                        }
+                        else if(sensorPara[0].inSrcTypeSel == VIRTUAL_CHANNEL_2){
+                            //sensor interface control (0x8100)
+                            ret = pSeninfDrv->setSeninf1Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, MIPI_SENSOR);
+                            //sensor muxer (0x8120)
+                            ret = pSeninfDrv->setSeninf1MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
+                                                                MIPI_SENSOR, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
+
+                            //virtual channel using CAM_SV(0x8D00)
+                            ret = pSeninfDrv->setSeninf4Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, VIRTUAL_CHANNEL_2);
+                            ret = pSeninfDrv->setSeninf4MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
+                                                                VIRTUAL_CHANNEL_2, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
+                            //Cam SV Tg Grab
+                            ret = pSeninfDrv->setSV2GrabRange(0x00, gVCInfo.VC2_SIZEH, 0x00, gVCInfo.VC2_SIZEV);
+                            ret = pSeninfDrv->setSV2Cfg((TG_FORMAT_ENUM)sensorPara[0].inDataType, (SENSOR_DATA_BITS_ENUM)sensorPara[0].senInLsb, sensorDynamicInfo[0].pixelMode);
+                            ret = pSeninfDrv->setSV2ViewFinderMode(sensorPara[0].u1IsContinuous? 0 : 1 );
+
+                            // Sensor interface for VC
+                            MY_LOGD("VC0_ID(%d),VC0_DataType(%d),VC1_ID(%d),VC1_DataType(%d),VC2_ID(%d),VC2_DataType(%d),VC3_ID(%d),VC3_DataType(%d)",
+                                     gVCInfo.VC0_ID,gVCInfo.VC0_DataType,gVCInfo.VC1_ID,gVCInfo.VC1_DataType,gVCInfo.VC2_ID,gVCInfo.VC2_DataType,
+                                     gVCInfo.VC3_ID,gVCInfo.VC3_DataType);
+                            ret = pSeninfDrv->setSeninf1VC((gVCInfo.VC0_DataType<<2)|(gVCInfo.VC0_ID&0x03),(gVCInfo.VC1_DataType<<2)|(gVCInfo.VC1_ID&0x03),
+                                                            (gVCInfo.VC2_DataType<<2)|(gVCInfo.VC2_ID&0x03),(gVCInfo.VC3_DataType<<2)|(gVCInfo.VC3_ID&0x03),5);
+                            //NCSI2 control reg
+                            ret = pSeninfDrv->setSeninf1NCSI2(sensorPara[0].u1MIPIDataTermDelay,sensorPara[0].u1MIPIDataSettleDelay,sensorPara[0].u1MIPIClkTermDelay,
+                            sensorPara[0].u1VsyncPol,sensorPara[0].u1MIPILaneNum,1,sensorPara[0].u1MIPIPacketECCOrder,0,0);
+
+                            ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_TG1,SENINF_1);
+                            ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_SV2,SENINF_1);
+                            sensorDynamicInfo[0].TgVR1Info = CAM_TG_NONE;
+                            sensorDynamicInfo[0].TgVR2Info = CAM_SV_2;
+
+                        }
+                        else if (sensorPara[0].inSrcTypeSel == VIRTUAL_VC_12) {
+
+                            //sensor interface control (0x8100)
+                            ret = pSeninfDrv->setSeninf1Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, MIPI_SENSOR);
+                            //sensor muxer (0x8120)
+                            ret = pSeninfDrv->setSeninf1MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
+                                                                MIPI_SENSOR, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
+
+                            //virtual channel using CAM_SV1(0x8900)
+                            ret = pSeninfDrv->setSeninf3Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, VIRTUAL_CHANNEL_1);
+                            ret = pSeninfDrv->setSeninf3MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
+                                                                VIRTUAL_CHANNEL_1, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
+                            //Cam SV Tg Grab for CAMSV1 (0x9400)
+                            ret = pSeninfDrv->setSV1GrabRange(0x00, gVCInfo.VC1_SIZEH, 0x00, gVCInfo.VC1_SIZEV);
+                            ret = pSeninfDrv->setSV1Cfg((TG_FORMAT_ENUM)sensorPara[0].inDataType, (SENSOR_DATA_BITS_ENUM)sensorPara[0].senInLsb, sensorDynamicInfo[0].pixelMode);
+                            ret = pSeninfDrv->setSV1ViewFinderMode(sensorPara[0].u1IsContinuous? 0 : 1 );
+
+                            //virtual channel using CAM_SV2(0x8D00)
+                            ret = pSeninfDrv->setSeninf4Ctrl((PAD2CAM_DATA_ENUM)sensorPara[0].padSel, VIRTUAL_CHANNEL_2);
+                            ret = pSeninfDrv->setSeninf4MuxCtrl(sensorPara[0].u1HsyncPol?0 : 1, sensorPara[0].u1VsyncPol? 0 : 1,
+                                                                VIRTUAL_CHANNEL_2, (TG_FORMAT_ENUM)sensorPara[0].inDataType, sensorDynamicInfo[0].pixelMode);
+                            //Cam SV Tg Grab for CAMSV2 (0x9c00)
+                            ret = pSeninfDrv->setSV2GrabRange(0x00, gVCInfo.VC2_SIZEH, 0x00, gVCInfo.VC2_SIZEV);
+                            ret = pSeninfDrv->setSV2Cfg((TG_FORMAT_ENUM)sensorPara[0].inDataType, (SENSOR_DATA_BITS_ENUM)sensorPara[0].senInLsb, sensorDynamicInfo[0].pixelMode);
+                            ret = pSeninfDrv->setSV2ViewFinderMode(sensorPara[0].u1IsContinuous? 0 : 1 );
+
+                            // Sensor interface for VC
+                            MY_LOGD("VC0_ID(%d),VC0_DataType(%d),VC1_ID(%d),VC1_DataType(%d),VC2_ID(%d),VC2_DataType(%d),VC3_ID(%d),VC3_DataType(%d)",
+                                     gVCInfo.VC0_ID,gVCInfo.VC0_DataType,gVCInfo.VC1_ID,gVCInfo.VC1_DataType,gVCInfo.VC2_ID,gVCInfo.VC2_DataType,
+                                     gVCInfo.VC3_ID,gVCInfo.VC3_DataType);
+                            ret = pSeninfDrv->setSeninf1VC((gVCInfo.VC0_DataType<<2)|(gVCInfo.VC0_ID&0x03),(gVCInfo.VC1_DataType<<2)|(gVCInfo.VC1_ID&0x03),
+                                                            (gVCInfo.VC2_DataType<<2)|(gVCInfo.VC2_ID&0x03),(gVCInfo.VC3_DataType<<2)|(gVCInfo.VC3_ID&0x03),gVCInfo.VC_Num);
+                            //NCSI2 control reg
+                            ret = pSeninfDrv->setSeninf1NCSI2(sensorPara[0].u1MIPIDataTermDelay,sensorPara[0].u1MIPIDataSettleDelay,sensorPara[0].u1MIPIClkTermDelay,
+                            sensorPara[0].u1VsyncPol,sensorPara[0].u1MIPILaneNum,1,sensorPara[0].u1MIPIPacketECCOrder,0,0);
+                            /*Top select 0x1500_8008*/
+                            ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_TG1,SENINF_1);
+                            ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_SV1,SENINF_1);
+                            ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_SV2,SENINF_1);
+                            sensorDynamicInfo[0].TgVR1Info = CAM_SV_1;
+                            sensorDynamicInfo[0].TgVR2Info = CAM_SV_2;
+                        }
+                        else {
+                            MY_LOGE("Main camera mipi pad(%d) incorrect, please check cfg_setting_imgsensor.cpp",sensorPara[0].mipiPad);
+                        }
                     }
                 }
                 else if (sensorPara[0].inSrcTypeSel == MIPI_SENSOR) {
@@ -2154,7 +2305,45 @@ MINT HalSensor::seninfControl(MUINT8 enable, MUINT32 currSensorDev)
 
                 ret = pSeninfDrv->setTg1ViewFinderMode(sensorPara[1].u1IsContinuous? 0 : 1 );
 
-                if (sensorPara[1].inSrcTypeSel >= MIPI_SENSOR) {
+                if (sensorPara[1].inSrcTypeSel >= VIRTUAL_CHANNEL_1) {
+                    if(sensorPara[1].mipiPad == 1) { /*2nd MIPI 4 Lane*/
+
+                        //sensor interface control (0x8100)
+                        ret = pSeninfDrv->setSeninf1Ctrl((PAD2CAM_DATA_ENUM)sensorPara[1].padSel, MIPI_SENSOR);
+                        //sensor muxer (0x8120)
+                        ret = pSeninfDrv->setSeninf1MuxCtrl(sensorPara[1].u1HsyncPol?0 : 1, sensorPara[1].u1VsyncPol? 0 : 1,
+                                                            MIPI_SENSOR, (TG_FORMAT_ENUM)sensorPara[1].inDataType, sensorDynamicInfo[1].pixelMode);
+
+                        //virtual channel using CAM_SV(0x8900)
+                        ret = pSeninfDrv->setSeninf3Ctrl((PAD2CAM_DATA_ENUM)sensorPara[1].padSel, VIRTUAL_CHANNEL_1);
+                        ret = pSeninfDrv->setSeninf3MuxCtrl(sensorPara[1].u1HsyncPol?0 : 1, sensorPara[1].u1VsyncPol? 0 : 1,
+                                                            VIRTUAL_CHANNEL_1, (TG_FORMAT_ENUM)sensorPara[1].inDataType, sensorDynamicInfo[1].pixelMode);
+                        //Cam SV Tg Grab(0x9418)
+                        ret = pSeninfDrv->setSV1GrabRange(0x00, gVCInfo.VC1_SIZEH, 0x00, gVCInfo.VC1_SIZEV);
+                        ret = pSeninfDrv->setSV1Cfg((TG_FORMAT_ENUM)sensorPara[1].inDataType, (SENSOR_DATA_BITS_ENUM)sensorPara[1].senInLsb, sensorDynamicInfo[1].pixelMode);
+                        ret = pSeninfDrv->setSV1ViewFinderMode(sensorPara[1].u1IsContinuous? 0 : 1 );
+
+                        // Sensor interface for VC
+                        MY_LOGD("VC0_ID(%d),VC0_DataType(%d),VC1_ID(%d),VC1_DataType(%d),VC2_ID(%d),VC2_DataType(%d),VC3_ID(%d),VC3_DataType(%d)",
+                                 gVCInfo.VC0_ID,gVCInfo.VC0_DataType,gVCInfo.VC1_ID,gVCInfo.VC1_DataType,gVCInfo.VC2_ID,gVCInfo.VC2_DataType,
+                                 gVCInfo.VC3_ID,gVCInfo.VC3_DataType);
+                        ret = pSeninfDrv->setSeninf2VC((gVCInfo.VC0_DataType<<2)|(gVCInfo.VC0_ID&0x03),(gVCInfo.VC1_DataType<<2)|(gVCInfo.VC1_ID&0x03),
+                                                        (gVCInfo.VC2_DataType<<2)|(gVCInfo.VC2_ID&0x03),(gVCInfo.VC3_DataType<<2)|(gVCInfo.VC3_ID&0x03),gVCInfo.VC_Num);
+                        //NCSI2 control reg
+                        ret = pSeninfDrv->setSeninf2Ctrl((PAD2CAM_DATA_ENUM)sensorPara[1].padSel, (SENINF_SOURCE_ENUM)sensorPara[1].inSrcTypeSel);
+                        ret = pSeninfDrv->setSeninf2NCSI2(sensorPara[1].u1MIPIDataTermDelay,sensorPara[1].u1MIPIDataSettleDelay,sensorPara[1].u1MIPIClkTermDelay,
+                        sensorPara[1].u1VsyncPol,sensorPara[1].u1MIPILaneNum,1,sensorPara[1].u1MIPIPacketECCOrder,0,0);
+                        /*0x8008*/
+                        ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_TG1,SENINF_2);
+                        ret = pSeninfDrv->setSeninfTopMuxCtrl(SENINF_TOP_SV1,SENINF_2);
+                        sensorDynamicInfo[1].TgVR1Info = CAM_SV_1;
+                        sensorDynamicInfo[1].TgVR2Info = CAM_TG_NONE;
+                    }
+                    else {
+                        MY_LOGE("Main camera mipi pad(%d) incorrect, please check cfg_setting_imgsensor.cpp",sensorPara[0].mipiPad);
+                    }
+                }
+                else if (sensorPara[1].inSrcTypeSel >= MIPI_SENSOR) {
                     if(sensorPara[1].mipiPad == 2) {
                         //sensorPara[1].MIPI_OPHY_TYPE=1; //For Test only
                         if(sensorPara[1].MIPI_OPHY_TYPE == 1) // CSI2

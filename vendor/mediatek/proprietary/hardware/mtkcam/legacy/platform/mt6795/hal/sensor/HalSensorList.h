@@ -117,6 +117,7 @@ typedef struct {
     MUINT HDRMode;
     MUINT MIPI_OPHY_TYPE; // 0: NCSI2 , 1:CSI2
     MUINT NCSI2_HSRXDET_MODE; // 0: Enable HS Detect, 1: disable HS Detect
+    MUINT PDAFMode; /* 0: no PDAF, 1: PDAF VC Type1*/
 }SENSOR_CONFIG_STRUCT;
 
 /******************************************************************************

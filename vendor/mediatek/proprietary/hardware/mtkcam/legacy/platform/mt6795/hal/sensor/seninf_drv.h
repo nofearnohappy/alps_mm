@@ -63,6 +63,7 @@ typedef enum { //0:CSI2, 3: parallel, 8:nCSI2
     VIRTUAL_CHANNEL_1 = 0x9,
     VIRTUAL_CHANNEL_2 = 0xA,
     VIRTUAL_CHANNEL_3 = 0xB,
+    VIRTUAL_VC_12 = 0xC,
 }SENINF_SOURCE_ENUM;
 
 

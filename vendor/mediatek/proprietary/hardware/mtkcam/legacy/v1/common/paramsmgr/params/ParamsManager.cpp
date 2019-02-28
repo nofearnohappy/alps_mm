@@ -1240,3 +1240,26 @@ AddPreviewSizeForPanel()
 
 }
 
+/******************************************************************************
+*
+*******************************************************************************/
+bool
+ParamsManager::
+getDefaultPreviewFps(int& fps)
+{
+    fps = mDefaultPreviewFps;
+    return true;
+}
+
+/******************************************************************************
+*
+*******************************************************************************/
+bool
+ParamsManager::
+getDefaultPreviewFpsRange(int& minFps, int& maxFps)
+{
+    minFps = mDefaultPreviewFpsRange[0];
+    maxFps = mDefaultPreviewFpsRange[1];
+    return true;
+}
+

@@ -308,6 +308,9 @@ protected:  ////                    Data Members.
     int32_t                         mEnRaw16CB;
     //
     CpuCtrl*                        mpCpuCtrl;
+    //
+    MINT                            mDefaultPreviewFps;
+    MINT                            mDefaultPreviewFpsRange[2];
 };
 
 

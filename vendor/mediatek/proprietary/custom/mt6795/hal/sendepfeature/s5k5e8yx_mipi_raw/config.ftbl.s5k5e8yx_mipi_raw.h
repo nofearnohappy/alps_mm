@@ -199,15 +199,16 @@ FTABLE_SCENE_INDEP()
     FTABLE_CONFIG_AS_TYPE_OF_USER(
         KEY_AS_(MtkCameraParameters::KEY_PREVIEW_FPS_RANGE), 
         SCENE_AS_DEFAULT_SCENE(
-            ITEM_AS_DEFAULT_("60000,60000"), 
+            ITEM_AS_DEFAULT_("5000,60000"), 
             ITEM_AS_USER_LIST_(
-                "(15000,15000)", 
-                "(24000,24000)", 
+                "(15000,15000)",
+                "(20000,20000)",
+                "(24000,24000)",
+                "(5000,30000)",
                 "(30000,30000)",
-//#if (1 == SLOW_MOTION_VIDEO_SUPPORTED)
+                "(5000,60000)",
                 "(60000,60000)",
                 "(120000,120000)",
-//#endif 
             )
         ), 
     )
