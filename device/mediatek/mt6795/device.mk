@@ -271,10 +271,8 @@ PRODUCT_PACKAGES += wappush
 PRODUCT_PACKAGES += thememap.xml
 PRODUCT_PACKAGES += libgpu_aux
 PRODUCT_PACKAGES += libged
-ifneq ($(MTK_BASIC_PACKAGE), yes)
-  PRODUCT_PACKAGES += gas_srv
-  PRODUCT_PACKAGES += libgas.so
-endif
+PRODUCT_PACKAGES += gas_srv
+PRODUCT_PACKAGES += libgas.so
 PRODUCT_PACKAGES += libGLES_android
 PRODUCT_PACKAGES += pvrsrvctl
 PRODUCT_PACKAGES += ged_srv

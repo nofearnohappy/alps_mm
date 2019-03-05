@@ -37,9 +37,9 @@ static const char *DL_PGA_LINEOUT_GAIN[] = {"8Db", "7Db", "6Db", "5Db", "4Db", "
                                             "-4Db", "-5Db", "-6Db", "-7Db", "-8Db", "-9Db", "-10Db" , "-40Db"
                                            };
 
-static const char *DL_PGA_SPEAKER_GAIN[] = {"4Db", "5Db", "6Db", "7Db", "8Db", "9Db", "10Db",
-                                            "11Db", "12Db", "13Db", "14Db", "15Db", "16Db", "17Db"
-                                           };
+static const char *DL_PGA_SPEAKER_GAIN[] = {"MUTE", "0Db", "4Db", "5Db", "6Db", "7Db", "8Db", "9Db", "10Db",
+                                             "11Db", "12Db", "13Db", "14Db", "15Db", "16Db", "17Db"
+                                            };
 
 // here can change to match audiosystem
 #if 1
@@ -263,6 +263,22 @@ static const uint16_t DlDigital_Gain_Map_Ver2[(VOICE_VOLUME_MAX / VOICE_ONEDB_ST
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
     10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+};
+
+static const uint16_t Headphones_MIUI[(VOICE_VOLUME_MAX / VOICE_ONEDB_STEP) + 1] =
+{
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+    30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40
+};
+
+static const uint16_t Headphones_MIUI_2[(VOICE_VOLUME_MAX / VOICE_ONEDB_STEP) + 1] =
+{
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
 };
 
 // HW Gain mappring
@@ -622,36 +638,6 @@ void AudioALSAVolumeController::ApplyMdDlGain(int32_t degradeDb)
     }
 #endif
     ALOGD("ApplyMdDlGain degradeDb = %d oldDlgain = %d checkvalue = %d", degradeDb,oldDlgain,checkvalue);
-    if(oldDlgain != checkvalue)
-    {
-        oldDlgain = oldDlgain * -1;
-        oldDlgain = oldDlgain >>2;
-        int offset = (oldDlgain -degradeDb);
-        int step =0;
-        if(offset > 0)
-        {
-            step = -1;
-        }
-        else if (offset==0)
-        {
-            step = 0;
-        }
-        else
-        {
-            step = 1;
-        }
-        ALOGD("ApplyMdDlGain oldDlgain = 0x%x",oldDlgain);
-        while(offset != 0)
-        {
-            for(int i = 0; i < 4; i++)
-            {
-                SpeechDriverFactory::GetInstance()->GetSpeechDriver()->SetDownlinkGain(((-1 * oldDlgain) << 2) + (-1 * step * i));
-                usleep(2000);
-            }
-            oldDlgain += step;
-            offset+= step;
-        }
-    }
     SpeechDriverFactory::GetInstance()->GetSpeechDriver()->SetDownlinkGain((-1 * degradeDb) << 2); // degrade db * 4
 }
 
@@ -669,36 +655,6 @@ void AudioALSAVolumeController::ApplyMdDlEhn1Gain(int32_t Gain)
     }
 #endif
     ALOGD("ApplyMdDlGain degradeDb = %d oldDlgain = %d checkvalue = %d", Gain,oldDlgain,checkvalue);
-    if(oldDlgain != checkvalue)
-    {
-        oldDlgain = oldDlgain * -1;
-        oldDlgain = oldDlgain >>2;
-        int offset = (oldDlgain -Gain);
-        int step =0;
-        if(offset > 0)
-        {
-            step = -1;
-        }
-        else if (offset==0)
-        {
-            step = 0;
-        }
-        else
-        {
-            step = 1;
-        }
-        ALOGD("ApplyMdDlGain oldDlgain = 0x%x",oldDlgain);
-        while(offset != 0)
-        {
-            for(int i = 0; i < 4; i++)
-            {
-                SpeechDriverFactory::GetInstance()->GetSpeechDriver()->SetDownlinkGain(((-1 * oldDlgain) << 2) + (-1 * step * i));
-                usleep(2000);
-            }
-            oldDlgain += step;
-            offset+= step;
-        }
-    }
     SpeechDriverFactory::GetInstance()->GetSpeechDriver()->SetEnh1DownlinkGain(-1 * (Gain) << 2); // degrade db * 4
 }
 
@@ -1955,12 +1911,9 @@ status_t AudioALSAVolumeController::ApplyVoiceGain(int degradeDb, audio_mode_t m
     }
     if (device & AUDIO_DEVICE_OUT_WIRED_HEADSET ||  device & AUDIO_DEVICE_OUT_WIRED_HEADPHONE)
     {
-        VoiceAnalogRange = DLPGA_HeadsetGain_Map_Incall[degradeDb];
-        DigitalgradeDb = DlDigital_HeadsetGain_Map_Incall[degradeDb];
-        if (VoiceAnalogRange >= (_countof(DL_PGA_Headset_GAIN) - 1))
-        {
-            VoiceAnalogRange = _countof(DL_PGA_Headset_GAIN) - 1;
-        }
+        DigitalgradeDb = Headphones_MIUI[degradeDb];
+        VoiceAnalogRange = Headphones_MIUI_2[degradeDb] > 18 ? 19 : Headphones_MIUI_2[degradeDb];
+
         if (ModeSetVoiceVolume(mode) == true) //HP switch, phone call mode always use internal DAC
         {
             ApplyMdDlGain(DigitalgradeDb);

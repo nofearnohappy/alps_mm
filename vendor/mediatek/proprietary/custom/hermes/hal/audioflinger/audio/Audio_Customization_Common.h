@@ -56,7 +56,7 @@
 /***************************************************
 *(1)->Use Ref Mic as main mic; (0)->Use original main mic.
 *****************************************************/
-#define USE_REFMIC_IN_LOUDSPK       (0)
+#define USE_REFMIC_IN_LOUDSPK       (1)
 
 /****************************************************
 * Define this will enable audio compensation filter for loudspeaker

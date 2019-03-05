@@ -170,6 +170,7 @@ class AudioALSAHardwareResourceManager
         bool GetExtDacPropertyEnable(void);
 
         AudioLock mLock;
+        AudioLock mGetInstanceLock;
         AudioLock mLockin;
 
         struct mixer *mMixer;

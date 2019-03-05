@@ -86,6 +86,10 @@ static String8 keySetTDMRecEnable       = String8("SetTDMRecEnable");
 //only support on dual MIC for switch LR input channel for video record when the device rotate
 static String8 keyLR_ChannelSwitch = String8("LRChannelSwitch");
 
+//force use Min MIC or Ref MIC data
+//only support on dual MIC for only get main Mic or Ref Mic data
+static String8 keyForceUseSpecificMicData = String8("ForceUseSpecificMic");
+
 // BesRecord Related
 static String8 keyHDREC_SET_VOICE_MODE = String8("HDREC_SET_VOICE_MODE");
 static String8 keyHDREC_SET_VIDEO_MODE = String8("HDREC_SET_VIDEO_MODE");
@@ -1183,6 +1187,23 @@ status_t AudioALSAHardware::setParameters(const String8 &keyValuePairs)
     {
         param.remove(keySET_LOOPBACK_USE_LOUD_SPEAKER);
         bForceUseLoudSpeakerInsteadOfReceiver = value & 0x1;
+    }
+
+    //only support on dual MIC for only get main Mic or Ref Mic data
+    if (param.getInt(keyForceUseSpecificMicData, value) == NO_ERROR)
+    {
+#ifdef MTK_DUAL_MIC_SUPPORT
+        ALOGD("keyForceUseSpecificMic=%d", value);
+        if (value == 1)
+            AudioALSAHardwareResourceManager::getInstance()->setBuiltInMicSpecificType(BUILTIN_MIC_MIC1_ONLY);
+        else if (value == 2)
+            AudioALSAHardwareResourceManager::getInstance()->setBuiltInMicSpecificType(BUILTIN_MIC_MIC2_ONLY);
+        else
+            AudioALSAHardwareResourceManager::getInstance()->setBuiltInMicSpecificType(BUILTIN_MIC_DEFAULT);
+#else
+        ALOGD("only support in dual MIC");
+#endif
+        param.remove(keyForceUseSpecificMicData);
     }
 
     // Assign delay frame for modem loopback // 1 frame = 20ms

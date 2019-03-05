@@ -25,7 +25,7 @@ namespace android
  *                     Constant
  *============================================================================*/
 
-static const uint32_t kReadBufferSize = (((uint32_t)(44.1*20*2*2)) & 0xFFFFFFC0); // (DL1)44.1K\20ms data\stereo\2byte\(Align64byte)
+static const uint32_t kReadBufferSize = 0x1B80 / 2; // 44.1K\stereo\40ms data (framebase: get 40ms data/per time), downlink sample rate(DL1)
 
 
 /*==============================================================================
