@@ -235,24 +235,16 @@ updatePreviewFpsParams(NSCameraFeature::FeatureInfo const& rFeatureInfo)
             }
         }
     }
+    //
     //  Preview frame rate
     mParameters.set(CameraParameters::KEY_PREVIEW_FRAME_RATE,            s8FrameRateDefault.string());
     mParameters.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, s8FrameRateList.string());
     //
     //  Preview fps range
     //  TODO:
+    MY_LOGD_IF(1, "FrameRateList=%s;UpdateFpsRangeList=%s",s8FrameRateList.string(),s8UpdateFpsRangeList.string());
     mParameters.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, s8FpsRangeDefault.string());
     mParameters.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE, s8UpdateFpsRangeList.string());
-    MY_LOGD_IF(1, "FrameRateList=%s;UpdateFpsRangeList=%s",s8FrameRateList.string(),s8UpdateFpsRangeList.string());
-    //
-    mDefaultPreviewFps = mParameters.getInt(CameraParameters::KEY_PREVIEW_FRAME_RATE);
-    mParameters.getPreviewFpsRange(
-                &mDefaultPreviewFpsRange[0],
-                &mDefaultPreviewFpsRange[1]);
-    MY_LOGD("FPS:%d,%d-%d",
-            mDefaultPreviewFps,
-            mDefaultPreviewFpsRange[0],
-            mDefaultPreviewFpsRange[1]);
     //
     return  true;
 }

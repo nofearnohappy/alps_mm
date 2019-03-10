@@ -42,7 +42,8 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 #-----------------------------------------------------------
-sinclude $(TOP)/$(MTK_PATH_PLATFORM)/hardware/mtkcam/mtkcam.mk
+sinclude $(TOP)/$(MTK_PATH_SOURCE)/hardware/mtkcam/mtkcam.mk
+sinclude $(TOP)/$(MTK_MTKCAM_PLATFORM)/mtkcam.mk
 
 #-----------------------------------------------------------
 # version

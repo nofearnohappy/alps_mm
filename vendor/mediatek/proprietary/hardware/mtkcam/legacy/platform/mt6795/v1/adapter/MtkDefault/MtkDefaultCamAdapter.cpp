@@ -160,13 +160,6 @@ CamAdapter(
         sizeof(CamAdapter),
         this,&mpStateManager
     );
-    //Set default value
-    mpParamsMgr->getDefaultPreviewFps(mDefaultPreviewFps);
-    mpParamsMgr->getDefaultPreviewFpsRange(mDefaultPreviewFpsRange[0],mDefaultPreviewFpsRange[1]);
-    MY_LOGD("FPS:%d,%d-%d",
-            mDefaultPreviewFps,
-            mDefaultPreviewFpsRange[0],
-            mDefaultPreviewFpsRange[1]);
 }
 
 

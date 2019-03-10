@@ -195,8 +195,6 @@ public:     ////                    Operations.
     virtual bool                    updateHalAppMode()                              = 0;
     virtual bool                    updateBestFocusStep() const                     = 0;
     virtual bool                    getIfFirstPreviewFrameAsBlack()                 = 0;
-    virtual bool                    getDefaultPreviewFps(int& fps)                  = 0;
-    virtual bool                    getDefaultPreviewFpsRange(int& minFps, int& maxFps) = 0;
 
 public:     ////                    Utility.
     static void                     showParameters(String8 const& rs8Param);

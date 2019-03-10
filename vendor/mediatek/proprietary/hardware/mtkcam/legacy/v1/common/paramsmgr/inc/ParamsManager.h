@@ -231,10 +231,6 @@ protected:  ////                        For Display Rotation
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 public:  ////                        for first preview frame as black for quick camera launch
     virtual bool                        getIfFirstPreviewFrameAsBlack();
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-public:
-    virtual bool                        getDefaultPreviewFps(int& fps);
-    virtual bool                        getDefaultPreviewFpsRange(int& minFps, int& maxFps);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //  Data Members.
@@ -256,9 +252,7 @@ protected:  ////
     Vector<uint32_t>                    mvZoomRatios;
     //
     bool                                mIsAppendPreviewSize;  // For Display Rotation
-    //
-    int                                 mDefaultPreviewFps;
-    int                                 mDefaultPreviewFpsRange[2];
+
 };
 
 
