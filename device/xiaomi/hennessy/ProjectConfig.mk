@@ -344,7 +344,7 @@ MTK_FAN5405_SUPPORT = no
 MTK_FAT_ON_NAND = no
 MTK_FD_SUPPORT = no
 MTK_FEMTO_CELL_SUPPORT = no
-MTK_FILEMANAGER_APP = no
+MTK_FILEMANAGER_APP = yes
 MTK_FIRST_MD = 1
 #zhoulingyun chang to yes for cx861
 MTK_FLIGHT_MODE_POWER_OFF_MD = yes
@@ -761,4 +761,5 @@ TRUSTONIC_TEE_SUPPORT = yes
 MOBICORE_DRIVER = yes
 MOBICORE_API = yes
 MTK_SECURITY_SW_SUPPORT = yes
+MTK_MIRAVISION_SUPPORT = yes
 ################################################################
