@@ -575,6 +575,10 @@ on boot
     chmod 0664 /sys/class/leds/button-backlight/brightness
     chown system system /sys/class/leds/button-backlight/brightness
 
+    # flashlight
+    chmod 0664 /sys/class/leds/flashlight/brightness
+    chown system system /sys/class/leds/flashlight/brightness
+
     # Leds
     chown system system /sys/class/leds/red/brightness
     chown system system /sys/class/leds/red/trigger
@@ -590,6 +594,17 @@ on boot
     chown system system /sys/class/leds/cyan/trigger
     chown system system /sys/class/leds/violet/brightness
     chown system system /sys/class/leds/violet/trigger
+
+    chown root   radio  /sys/class/leds/lcd-backlight/duty
+    chown root   radio  /sys/class/leds/lcd-backlight/div
+    chown system system /sys/class/leds/lcd-backlight/trigger
+    chown system system /sys/class/leds/button-backlight/trigger
+    chown system system /sys/class/leds/keyboard-backlight/trigger
+    chown system system /sys/class/leds/jogball-backlight/trigger
+    chown system system /sys/class/leds/red/trigger
+    chown system system /sys/class/leds/green/trigger
+    chown system system /sys/class/leds/blue/trigger
+
 
 # Memory management.  Basic kernel parameters, and allow the high
 # level system server to be able to adjust the kernel OOM driver
