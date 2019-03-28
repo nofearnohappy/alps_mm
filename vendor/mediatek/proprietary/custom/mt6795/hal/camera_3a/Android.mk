@@ -76,6 +76,8 @@ LOCAL_SRC_FILES += \
   shading_tuning_custom.cpp \
   tsf_tuning_custom.cpp \
   n3d_sync2a_tuning_param.cpp \
+  nvram_custom.cpp
+
 
 
 #-----------------------------------------------------------
