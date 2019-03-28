@@ -12,6 +12,9 @@ LC_MTK_PLATFORM := $(shell echo $(MTK_PLATFORM) | tr A-Z a-z )
 LOCAL_C_INCLUDES += \
     $(MTK_PATH_SOURCE)/hardware/aal/include
 
+ifeq ($(strip $(MTK_ULTRA_DIMMING_SUPPORT)),yes)
+    LOCAL_CFLAGS += -DMTK_ULTRA_DIMMING_SUPPORT
+endif
 
 LOCAL_MODULE:= libaal_config
 

@@ -65,7 +65,6 @@
 *#undef ENABLE_AUDIO_COMPENSATION_FILTER
 ***********************************************************************************/
 
-
 /*****************************************************************
 ** refine volume
 *****************************************************************/
@@ -94,6 +93,33 @@
 ** define chip delay for NXP
 ******************************************************************/
 #define CHIP_DELAY				(22)
+
+/******************************************************************
+** define using exernal amplifier
+******************************************************************/
+#define USING_EXTAMP_HP
+
+/******************************************************************
+** define the stereo speaker 
+******************************************************************/
+//#define ENABLE_STEREO_SPEAKER
+
+/***************************************************
+* Define phonmic and headset mic mode.
+typedef enum
+{
+    AUDIO_MIC_MODE_ACC = 1,
+    AUDIO_MIC_MODE_DCC = 2,
+    AUDIO_MIC_MODE_DMIC = 3,
+    AUDIO_MIC_MODE_DMIC_LP = 4,
+    AUDIO_MIC_MODE_DCCECMDIFF = 5,
+    AUDIO_MIC_MODE_DCCECMSINGLE = 6,
+} AUDIO_MIC_MODE;
+*****************************************************/
+#define PHONE_MIC_MODE (1)
+#define HEADSET_MIC_MODE (1)
+//#undef ENABLE_HEADPHONE_COMPENSATION_FILTER
+//#undef ENABLE_AUDIO_COMPENSATION_FILTER
 
 #endif
 

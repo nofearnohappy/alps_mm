@@ -111,6 +111,6 @@ void get_EIS_PLUS_CustomizeData(EIS_PLUS_Customize_Para_t *a_pDataOut)
 
 bool GetEisLinkWithDfr()
 {
-    return true;    // true : dynamic frame rate off when eis on; false : dynamic frame rate on when eis on
+    return false;    // true : dynamic frame rate off when eis on; false : dynamic frame rate on when eis on
 }
 

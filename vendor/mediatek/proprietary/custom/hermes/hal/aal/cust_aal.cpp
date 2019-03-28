@@ -44,11 +44,11 @@ int SmartBacklightRange[] = { 128 };
 // Minimum backlight value of AAL output
 // In [0, 1023]
 // Supports multiple LCM. The number of elements must equal to LCM_COUNT.
-#ifdef MTK_ULTRA_DIMMING_SUPPORT
+#if defined(MTK_ULTRA_DIMMING_SUPPORT)
 int MinOutBL[] = { 32 };
 #else
 int MinOutBL[] = { 0 };
-#endif;
+#endif
 
 }
 
